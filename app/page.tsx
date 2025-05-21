@@ -84,9 +84,12 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container w-[80%] mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <h1 className="text-lg font-semibold">
-            India Weather Data Visualization
-          </h1>
+          <div className="flex items-center space-x-2">
+            <img src="/logo.jpg" alt="Logo" className="h-12 w-12 w-auto" />
+            <h1 className="text-lg font-semibold">
+              India Weather Data Visualization
+            </h1>
+          </div>
           <FileUploadButton onDataLoaded={handleDataLoaded} />
         </div>
       </header>
