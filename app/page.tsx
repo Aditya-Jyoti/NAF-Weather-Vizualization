@@ -16,8 +16,9 @@ import { Search } from "lucide-react";
 import { Footer } from "@/components/footer";
 import FileUploadButton from "@/components/file-upload-button";
 import LocationSelector from "@/components/location-selector";
+import { sampleData } from "@/lib/excel-parser";
 import { Toaster } from "@/components/toaster";
-import { Loader2 } from "lucide-react"; // Import Loader2 to fix the undeclared variable error
+import { Loader2 } from "lucide-react";
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
 const WeatherMap = dynamic(() => import("@/components/weather-map"), {
@@ -45,12 +46,17 @@ export default function Home() {
           const { data } = await response.json();
           if (data && data.length > 0) {
             setWeatherData(data);
+          } else {
+            // If no data in MongoDB, use sample data
+            setWeatherData(sampleData);
           }
         } else {
           console.error("Failed to fetch data from MongoDB");
+          setWeatherData(sampleData);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        setWeatherData(sampleData);
       } finally {
         setIsLoading(false);
       }
@@ -84,12 +90,9 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container w-[80%] mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-2">
-            <img src="/logo.jpg" alt="Logo" className="h-12 w-12 w-auto" />
-            <h1 className="text-lg font-semibold">
-              India Weather Data Visualization
-            </h1>
-          </div>
+          <h1 className="text-lg font-semibold">
+            India Weather Data Visualization
+          </h1>
           <FileUploadButton onDataLoaded={handleDataLoaded} />
         </div>
       </header>
@@ -132,64 +135,97 @@ export default function Home() {
                         {selectedLocation.district}
                       </CardTitle>
                       <CardDescription>
-                        {selectedLocation.domain}
+                        {selectedLocation.state} - 5-Day Weather Data
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <Tabs defaultValue="weather">
                         <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="weather">Weather</TabsTrigger>
-                          <TabsTrigger value="location">Location</TabsTrigger>
+                          <TabsTrigger value="weather">
+                            Weather Data
+                          </TabsTrigger>
+                          <TabsTrigger value="location">
+                            Location Info
+                          </TabsTrigger>
                         </TabsList>
                         <TabsContent value="weather" className="space-y-4 pt-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col space-y-1">
-                              <span className="text-sm text-muted-foreground">
-                                Rainfall
-                              </span>
-                              <span className="text-2xl font-bold">
-                                {selectedLocation.rain} mm
-                              </span>
+                          {selectedLocation.dailyData &&
+                          selectedLocation.dailyData.length > 0 ? (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b">
+                                    <th className="text-left p-2 font-medium">
+                                      Day
+                                    </th>
+                                    <th className="text-left p-2 font-medium">
+                                      Rain (mm)
+                                    </th>
+                                    <th className="text-left p-2 font-medium">
+                                      Max °C
+                                    </th>
+                                    <th className="text-left p-2 font-medium">
+                                      Min °C
+                                    </th>
+                                    <th className="text-left p-2 font-medium">
+                                      RH %
+                                    </th>
+                                    <th className="text-left p-2 font-medium">
+                                      Wind km/h
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {selectedLocation.dailyData.map(
+                                    (dayData, index) => {
+                                      if (!dayData) return null;
+                                      return (
+                                        <tr
+                                          key={index}
+                                          className="border-b hover:bg-muted/50"
+                                        >
+                                          <td className="p-2 font-medium">
+                                            Day {dayData.day}
+                                          </td>
+                                          <td className="p-2">
+                                            {dayData.rain}
+                                          </td>
+                                          <td className="p-2">
+                                            {dayData.Tmax}
+                                          </td>
+                                          <td className="p-2">
+                                            {dayData.Tmin}
+                                          </td>
+                                          <td className="p-2">{dayData.RH}</td>
+                                          <td className="p-2">
+                                            {dayData.Wind_Speed}
+                                          </td>
+                                        </tr>
+                                      );
+                                    }
+                                  )}
+                                </tbody>
+                              </table>
                             </div>
-                            <div className="flex flex-col space-y-1">
-                              <span className="text-sm text-muted-foreground">
-                                Max Temp
-                              </span>
-                              <span className="text-2xl font-bold">
-                                {selectedLocation.Tmax}°C
-                              </span>
+                          ) : (
+                            <div className="text-center text-muted-foreground p-4">
+                              No weather data available
                             </div>
-                            <div className="flex flex-col space-y-1">
-                              <span className="text-sm text-muted-foreground">
-                                Min Temp
-                              </span>
-                              <span className="text-2xl font-bold">
-                                {selectedLocation.Tmin}°C
-                              </span>
-                            </div>
-                            <div className="flex flex-col space-y-1">
-                              <span className="text-sm text-muted-foreground">
-                                Humidity
-                              </span>
-                              <span className="text-2xl font-bold">
-                                {selectedLocation.RH}%
-                              </span>
-                            </div>
-                            <div className="flex flex-col space-y-1 col-span-2">
-                              <span className="text-sm text-muted-foreground">
-                                Wind Speed
-                              </span>
-                              <span className="text-2xl font-bold">
-                                {selectedLocation.Wind_Speed} km/h
-                              </span>
-                            </div>
-                          </div>
+                          )}
                         </TabsContent>
                         <TabsContent
                           value="location"
                           className="space-y-4 pt-4"
                         >
                           <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col space-y-1">
+                              <span className="text-sm text-muted-foreground">
+                                State
+                              </span>
+                              <span className="font-medium">
+                                {selectedLocation.state}
+                              </span>
+                            </div>
                             <div className="flex flex-col space-y-1">
                               <span className="text-sm text-muted-foreground">
                                 District
@@ -212,14 +248,6 @@ export default function Home() {
                               </span>
                               <span className="font-medium">
                                 {selectedLocation.village}
-                              </span>
-                            </div>
-                            <div className="flex flex-col space-y-1">
-                              <span className="text-sm text-muted-foreground">
-                                Domain
-                              </span>
-                              <span className="font-medium">
-                                {selectedLocation.domain}
                               </span>
                             </div>
                             <div className="flex flex-col space-y-1">
@@ -249,7 +277,7 @@ export default function Home() {
                       <CardTitle>Weather Information</CardTitle>
                       <CardDescription>
                         Select a location from the dropdown or click on any
-                        marker on the map to view detailed weather data
+                        marker on the map to view weather data
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

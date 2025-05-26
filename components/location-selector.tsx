@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -9,87 +9,153 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function LocationSelector({ weatherData, onLocationSelected }) {
-  const [districts, setDistricts] = useState([])
-  const [blocks, setBlocks] = useState([])
-  const [villages, setVillages] = useState([])
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [villages, setVillages] = useState([]);
 
-  const [selectedDistrict, setSelectedDistrict] = useState("")
-  const [selectedBlock, setSelectedBlock] = useState("")
-  const [selectedVillage, setSelectedVillage] = useState("")
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedBlock, setSelectedBlock] = useState("");
+  const [selectedVillage, setSelectedVillage] = useState("");
 
-  // Extract unique districts, blocks, and villages from the data
+  // Extract unique states, districts, blocks, and villages from the data
   useEffect(() => {
     if (weatherData && weatherData.length > 0) {
-      // Get unique districts
-      const uniqueDistricts = [...new Set(weatherData.map((item) => item.district).filter(Boolean))]
-      setDistricts(uniqueDistricts.sort())
+      // Get unique states
+      const uniqueStates = [
+        ...new Set(weatherData.map((item) => item.state).filter(Boolean)),
+      ];
+      setStates(uniqueStates.sort());
 
       // Reset selections when data changes
-      setSelectedDistrict("")
-      setSelectedBlock("")
-      setSelectedVillage("")
+      setSelectedState("");
+      setSelectedDistrict("");
+      setSelectedBlock("");
+      setSelectedVillage("");
     }
-  }, [weatherData])
+  }, [weatherData]);
+
+  // Update districts when state changes
+  useEffect(() => {
+    if (selectedState) {
+      const stateData = weatherData.filter(
+        (item) => item.state === selectedState
+      );
+      const uniqueDistricts = [
+        ...new Set(stateData.map((item) => item.district).filter(Boolean)),
+      ];
+      setDistricts(uniqueDistricts.sort());
+      setSelectedDistrict("");
+      setSelectedBlock("");
+      setSelectedVillage("");
+    } else {
+      setDistricts([]);
+    }
+  }, [selectedState, weatherData]);
 
   // Update blocks when district changes
   useEffect(() => {
     if (selectedDistrict) {
-      const districtData = weatherData.filter((item) => item.district === selectedDistrict)
-      const uniqueBlocks = [...new Set(districtData.map((item) => item.block).filter(Boolean))]
-      setBlocks(uniqueBlocks.sort())
-      setSelectedBlock("")
-      setSelectedVillage("")
+      const districtData = weatherData.filter(
+        (item) =>
+          item.state === selectedState && item.district === selectedDistrict
+      );
+      const uniqueBlocks = [
+        ...new Set(districtData.map((item) => item.block).filter(Boolean)),
+      ];
+      setBlocks(uniqueBlocks.sort());
+      setSelectedBlock("");
+      setSelectedVillage("");
     } else {
-      setBlocks([])
+      setBlocks([]);
     }
-  }, [selectedDistrict, weatherData])
+  }, [selectedDistrict, selectedState, weatherData]);
 
   // Update villages when block changes
   useEffect(() => {
     if (selectedBlock) {
-      const blockData = weatherData.filter((item) => item.district === selectedDistrict && item.block === selectedBlock)
-      const uniqueVillages = [...new Set(blockData.map((item) => item.village).filter(Boolean))]
-      setVillages(uniqueVillages.sort())
-      setSelectedVillage("")
+      const blockData = weatherData.filter(
+        (item) =>
+          item.state === selectedState &&
+          item.district === selectedDistrict &&
+          item.block === selectedBlock
+      );
+      const uniqueVillages = [
+        ...new Set(blockData.map((item) => item.village).filter(Boolean)),
+      ];
+      setVillages(uniqueVillages.sort());
+      setSelectedVillage("");
     } else {
-      setVillages([])
+      setVillages([]);
     }
-  }, [selectedBlock, selectedDistrict, weatherData])
+  }, [selectedBlock, selectedDistrict, selectedState, weatherData]);
+
+  // Handle state selection
+  const handleStateChange = (value) => {
+    setSelectedState(value);
+  };
 
   // Handle district selection
   const handleDistrictChange = (value) => {
-    setSelectedDistrict(value)
-  }
+    setSelectedDistrict(value);
+  };
 
   // Handle block selection
   const handleBlockChange = (value) => {
-    setSelectedBlock(value)
-  }
+    setSelectedBlock(value);
+  };
 
   // Handle village selection
   const handleVillageChange = (value) => {
-    setSelectedVillage(value)
+    setSelectedVillage(value);
 
     // Find the selected location data
     const selectedLocation = weatherData.find(
-      (item) => item.district === selectedDistrict && item.block === selectedBlock && item.village === value,
-    )
+      (item) =>
+        item.state === selectedState &&
+        item.district === selectedDistrict &&
+        item.block === selectedBlock &&
+        item.village === value
+    );
 
     if (selectedLocation) {
-      onLocationSelected(selectedLocation)
+      onLocationSelected(selectedLocation);
     }
-  }
+  };
 
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <Select value={selectedDistrict} onValueChange={handleDistrictChange}>
+            <Select value={selectedState} onValueChange={handleStateChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select State" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>States</SelectLabel>
+                  {states.map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Select
+              value={selectedDistrict}
+              onValueChange={handleDistrictChange}
+              disabled={!selectedState || districts.length === 0}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select District" />
               </SelectTrigger>
@@ -152,5 +218,5 @@ export default function LocationSelector({ weatherData, onLocationSelected }) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
